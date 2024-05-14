@@ -307,6 +307,18 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
   }
 
   @Override
+  public @NotNull OutboundPacket<World, Player, ItemStack, Plugin> createEntityTeleportPacket(String worldId, Position position) {
+    return (player, npc) -> {
+      // EntityTeleport (https://wiki.vg/Protocol#Entity_Teleport)
+      PacketWrapper<?> wrapper = new WrapperPlayServerEntityTeleport(
+        npc.entityId(),
+        new Location(position.x(), position.y(), position.z(), position.yaw(), position.pitch()), true);
+
+      this.packetPlayerManager.sendPacket(player, wrapper);
+    };
+  }
+
+  @Override
   public @NotNull <T, O> OutboundPacket<World, Player, ItemStack, Plugin> createEntityMetaPacket(
     @NotNull EntityMetadataFactory<T, O> metadata,
     @NotNull T value

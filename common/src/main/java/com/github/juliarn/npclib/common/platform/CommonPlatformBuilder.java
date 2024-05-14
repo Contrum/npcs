@@ -130,7 +130,7 @@ public abstract class CommonPlatformBuilder<W, P, I, E> implements Platform.Buil
     Objects.requireNonNull(this.extension, "extension");
 
     // let the downstream builder set all default values if required
-    this.prepareBuild();
+    prepareBuild();
 
     // use the default profile resolver if no specific one was specified
     if (this.profileResolver == null) {
@@ -147,7 +147,7 @@ public abstract class CommonPlatformBuilder<W, P, I, E> implements Platform.Buil
       this.npcTracker = CommonNpcTracker.newNpcTracker();
     }
 
-    return this.doBuild();
+    return doBuild();
   }
 
   protected abstract void prepareBuild();

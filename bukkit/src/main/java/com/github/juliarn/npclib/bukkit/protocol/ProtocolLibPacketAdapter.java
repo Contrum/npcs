@@ -47,6 +47,7 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.github.juliarn.npclib.api.Npc;
 import com.github.juliarn.npclib.api.Platform;
 import com.github.juliarn.npclib.api.PlatformVersionAccessor;
+import com.github.juliarn.npclib.api.Position;
 import com.github.juliarn.npclib.api.event.InteractNpcEvent;
 import com.github.juliarn.npclib.api.profile.ProfileProperty;
 import com.github.juliarn.npclib.api.protocol.OutboundPacket;
@@ -517,6 +518,11 @@ final class ProtocolLibPacketAdapter implements PlatformPacketAdapter<World, Pla
       // send the packet without notifying any bound packet listeners
       PROTOCOL_MANAGER.sendServerPacket(player, container, false);
     };
+  }
+
+  @Override
+  public @NotNull OutboundPacket<World, Player, ItemStack, Plugin> createEntityTeleportPacket(String worldId, Position position) {
+    return null;
   }
 
   @Override

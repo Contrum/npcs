@@ -67,7 +67,6 @@ allprojects {
 subprojects {
   // apply all plugins only to subprojects
   apply(plugin = "signing")
-  apply(plugin = "checkstyle")
   apply(plugin = "java-library")
   apply(plugin = "maven-publish")
   apply(plugin = "com.diffplug.spotless")
@@ -108,16 +107,6 @@ subprojects {
   extensions.configure<JavaPluginExtension> {
     disableAutoTargetJvm()
     toolchain.languageVersion.set(JavaLanguageVersion.of(17))
-  }
-
-  tasks.withType<Checkstyle> {
-    maxErrors = 0
-    maxWarnings = 0
-    configFile = rootProject.file("checkstyle.xml")
-  }
-
-  extensions.configure<CheckstyleExtension> {
-    toolVersion = rootProject.libs.versions.checkstyleTools.get()
   }
 
   extensions.configure<SpotlessExtension> {

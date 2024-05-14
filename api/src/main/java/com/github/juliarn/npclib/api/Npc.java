@@ -51,9 +51,13 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
 
   @NotNull Profile.Resolved profile();
 
+  void setProfile(Profile.Resolved profile);
+
   @NotNull W world();
 
   @NotNull Position position();
+
+  @NotNull Npc<W, P, I, E> teleport(@NotNull Position position);
 
   @NotNull NpcSettings<P> settings();
 
@@ -90,6 +94,8 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
   @NotNull NpcSpecificOutboundPacket<W, P, I, E> playAnimation(@NotNull EntityAnimation animation);
 
   @NotNull NpcSpecificOutboundPacket<W, P, I, E> changeItem(@NotNull ItemSlot slot, @NotNull I item);
+
+  I equipment(@NotNull ItemSlot slot);
 
   @NotNull <T, O> NpcSpecificOutboundPacket<W, P, I, E> changeMetadata(
     @NotNull EntityMetadataFactory<T, O> metadata,

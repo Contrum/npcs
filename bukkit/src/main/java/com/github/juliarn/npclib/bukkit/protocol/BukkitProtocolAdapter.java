@@ -25,7 +25,6 @@
 package com.github.juliarn.npclib.bukkit.protocol;
 
 import com.github.juliarn.npclib.api.protocol.PlatformPacketAdapter;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -39,12 +38,6 @@ public final class BukkitProtocolAdapter {
   }
 
   public static @NotNull PlatformPacketAdapter<World, Player, ItemStack, Plugin> packetAdapter() {
-    // check if protocol lib is available
-    if (Bukkit.getPluginManager().getPlugin("ProtocolLib") != null) {
-      return ProtocolLibPacketAdapter.INSTANCE;
-    }
-
-    // fallback
     return PacketEventsPacketAdapter.INSTANCE;
   }
 

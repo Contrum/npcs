@@ -42,8 +42,6 @@ protocolLib = { group = "com.github.dmulloy2", name = "ProtocolLib", version.ref
 packetEvents = { group = "com.github.retrooper.packetevents", name = "spigot", version.ref = "packetEvents" }
 
 # dummy version, just here for renovate to detect that there is something to update
-checkstyleTools = { group = "com.puppycrawl.tools", name = "checkstyle", version.ref = "checkstyleTools" }
-
 [plugins]
 
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

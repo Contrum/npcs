@@ -27,6 +27,7 @@ package com.github.juliarn.npclib.minestom.protocol;
 import com.github.juliarn.npclib.api.Npc;
 import com.github.juliarn.npclib.api.Platform;
 import com.github.juliarn.npclib.api.PlatformVersionAccessor;
+import com.github.juliarn.npclib.api.Position;
 import com.github.juliarn.npclib.api.event.InteractNpcEvent;
 import com.github.juliarn.npclib.api.profile.ProfileProperty;
 import com.github.juliarn.npclib.api.protocol.OutboundPacket;
@@ -329,6 +330,11 @@ public final class MinestomProtocolAdapter implements PlatformPacketAdapter<Inst
       PluginMessagePacket packet = new PluginMessagePacket(channelId, payload);
       player.sendPacket(packet);
     };
+  }
+
+  @Override
+  public @NotNull OutboundPacket<Instance, Player, ItemStack, Object> createEntityTeleportPacket(String worldId, Position position) {
+    return null;
   }
 
   @Override

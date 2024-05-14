@@ -25,6 +25,7 @@
 package com.github.juliarn.npclib.api.protocol;
 
 import com.github.juliarn.npclib.api.Platform;
+import com.github.juliarn.npclib.api.Position;
 import com.github.juliarn.npclib.api.protocol.enums.EntityAnimation;
 import com.github.juliarn.npclib.api.protocol.enums.ItemSlot;
 import com.github.juliarn.npclib.api.protocol.enums.PlayerInfoAction;
@@ -46,6 +47,8 @@ public interface PlatformPacketAdapter<W, P, I, E> {
   @NotNull OutboundPacket<W, P, I, E> createEquipmentPacket(@NotNull ItemSlot slot, @NotNull I item);
 
   @NotNull OutboundPacket<W, P, I, E> createCustomPayloadPacket(@NotNull String channelId, byte[] payload);
+
+  @NotNull OutboundPacket<W, P, I, E> createEntityTeleportPacket(String worldId, Position position);
 
   @NotNull <T, O> OutboundPacket<W, P, I, E> createEntityMetaPacket(
     @NotNull EntityMetadataFactory<T, O> metadata, @NotNull T value);

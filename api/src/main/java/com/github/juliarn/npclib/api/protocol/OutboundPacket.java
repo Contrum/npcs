@@ -47,6 +47,8 @@ public interface OutboundPacket<W, P, I, E> {
   }
 
   default @NotNull NpcSpecificOutboundPacket<W, P, I, E> toSpecific(@NotNull Npc<W, P, I, E> targetNpc) {
-    return NpcSpecificOutboundPacket.fromOutboundPacket(targetNpc, this);
+    NpcSpecificOutboundPacket<W, P, I, E> specificOutboundPacket = NpcSpecificOutboundPacket.fromOutboundPacket(targetNpc, this);
+    specificOutboundPacket.scheduleForTracked();
+    return specificOutboundPacket;
   }
 }

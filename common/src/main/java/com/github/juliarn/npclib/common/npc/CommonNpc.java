@@ -42,6 +42,7 @@ import com.github.juliarn.npclib.common.event.DefaultShowNpcEvent;
 import com.github.juliarn.npclib.common.flag.CommonNpcFlaggedObject;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -52,16 +53,17 @@ import org.jetbrains.annotations.UnmodifiableView;
 public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc<W, P, I, E> {
 
   protected final int entityId;
-  protected final Profile.Resolved profile;
+  protected Profile.Resolved profile;
 
   protected final W world;
-  protected final Position pos;
+  protected Position pos;
 
   protected final Platform<W, P, I, E> platform;
   protected final NpcSettings<P> npcSettings;
 
   protected final Set<P> trackedPlayers = Collections.synchronizedSet(new HashSet<>());
   protected final Set<P> includedPlayers = Collections.synchronizedSet(new HashSet<>());
+  protected final Map<ItemSlot, I> equipment = Collections.synchronizedMap(new HashMap<>());
 
   public CommonNpc(
     @NotNull Map<NpcFlag<?>, Optional<?>> flags,
@@ -91,6 +93,10 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
     return this.profile;
   }
 
+  public void setProfile(@NotNull Profile.Resolved profile) {
+    this.profile = profile;
+  }
+
   @Override
   public @NotNull W world() {
     return this.world;
@@ -99,6 +105,13 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   @Override
   public @NotNull Position position() {
     return this.pos;
+  }
+
+  @Override
+  public @NotNull Npc<W, P, I, E> teleport(@NotNull Position position) {
+    this.pos = position;
+    this.platform.packetFactory().createRotationPacket(position.yaw(), position.pitch()).toSpecific(this);
+    return this;
   }
 
   @Override
@@ -129,6 +142,10 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   @Override
   public boolean includesPlayer(@NotNull P player) {
     return this.includedPlayers.contains(player);
+  }
+
+  public I equipment(@NotNull ItemSlot slot) {
+    return this.equipment.get(slot);
   }
 
   @Override
@@ -262,6 +279,7 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
 
   @Override
   public @NotNull NpcSpecificOutboundPacket<W, P, I, E> changeItem(@NotNull ItemSlot slot, @NotNull I item) {
+    this.equipment.put(slot, item);
     return this.platform.packetFactory().createEquipmentPacket(slot, item).toSpecific(this);
   }
 
