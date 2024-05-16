@@ -30,7 +30,7 @@ dependencies {
 
   implementation(libs.paperLib)
   implementation(libs.geantyref)
-  implementation(libs.packetEvents)
+  compileOnly(libs.packetEvents)
 
   compileOnly(libs.netty)
   compileOnly(libs.paper)

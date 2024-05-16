@@ -362,14 +362,7 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
       platform.extension(),
       PACKET_EVENTS_SETTINGS);
 
-    // while I am not the biggest fan of that, it looks like
-    // that packet events is using the instance internally everywhere
-    // instead of passing the created instance around, which leaves us
-    // no choice than setting it as well :/
-    PacketEvents.setAPI(packetEventsApi);
-
-    // ensure that our api instance is initialized
-    packetEventsApi.init();
+    packetEventsApi = (PacketEventsAPI<Plugin>) PacketEvents.getAPI();
 
     // store the packet player manager & server version
     this.packetPlayerManager = packetEventsApi.getPlayerManager();
