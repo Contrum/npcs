@@ -35,6 +35,7 @@ import com.github.juliarn.npclib.api.protocol.enums.ItemSlot;
 import com.github.juliarn.npclib.api.protocol.meta.EntityMetadataFactory;
 import com.github.juliarn.npclib.api.settings.NpcSettings;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
@@ -94,6 +95,15 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
   @NotNull NpcSpecificOutboundPacket<W, P, I, E> playAnimation(@NotNull EntityAnimation animation);
 
   @NotNull NpcSpecificOutboundPacket<W, P, I, E> changeItem(@NotNull ItemSlot slot, @NotNull I item);
+
+  @NotNull Npc<W,P, I, E> addCommand(@NotNull String command);
+
+  @NotNull Npc<W,P, I, E> removeCommand(@NotNull String command);
+
+  @NotNull Npc<W,P, I, E> clearCommands();
+
+  @NotNull
+  List<String> getCommands();
 
   I equipment(@NotNull ItemSlot slot);
 

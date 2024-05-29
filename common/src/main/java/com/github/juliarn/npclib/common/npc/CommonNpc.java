@@ -40,10 +40,12 @@ import com.github.juliarn.npclib.api.util.Util;
 import com.github.juliarn.npclib.common.event.DefaultHideNpcEvent;
 import com.github.juliarn.npclib.common.event.DefaultShowNpcEvent;
 import com.github.juliarn.npclib.common.flag.CommonNpcFlaggedObject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -64,6 +66,8 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   protected final Set<P> trackedPlayers = Collections.synchronizedSet(new HashSet<>());
   protected final Set<P> includedPlayers = Collections.synchronizedSet(new HashSet<>());
   protected final Map<ItemSlot, I> equipment = Collections.synchronizedMap(new HashMap<>());
+
+  protected final List<String> commands = Collections.synchronizedList(new ArrayList<>());
 
   public CommonNpc(
     @NotNull Map<NpcFlag<?>, Optional<?>> flags,
@@ -281,6 +285,29 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   public @NotNull NpcSpecificOutboundPacket<W, P, I, E> changeItem(@NotNull ItemSlot slot, @NotNull I item) {
     this.equipment.put(slot, item);
     return this.platform.packetFactory().createEquipmentPacket(slot, item).toSpecific(this);
+  }
+
+  @Override
+  public @NotNull Npc<W, P, I, E> addCommand(@NotNull String command) {
+    this.commands.add(command);
+    return this;
+  }
+
+  @Override
+  public @NotNull Npc<W, P, I, E> removeCommand(@NotNull String command) {
+    this.commands.remove(command);
+    return this;
+  }
+
+  @Override
+  public @NotNull Npc<W, P, I, E> clearCommands() {
+    this.commands.clear();
+    return this;
+  }
+
+  @Override
+  public @NotNull List<String> getCommands() {
+    return this.commands;
   }
 
   @Override

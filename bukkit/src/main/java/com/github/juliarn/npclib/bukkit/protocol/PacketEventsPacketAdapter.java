@@ -399,6 +399,13 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
             case INTERACT:
               InteractNpcEvent.Hand hand = Lazy.HAND_CONVERTER.get(packet.getHand());
               this.platform.eventManager().post(DefaultInteractNpcEvent.interactNpc(npc, player, hand));
+              if (!npc.getCommands().isEmpty()) {
+                for (String command : npc.getCommands()) {
+                  Player other = (Player) player;
+
+                  other.performCommand(command);
+                }
+              }
               break;
             default:
               // we don't handle INTERACT_AT as the client sends it alongside the interact packet (duplicate event call)
