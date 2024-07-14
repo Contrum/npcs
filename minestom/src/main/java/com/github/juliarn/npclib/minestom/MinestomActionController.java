@@ -52,7 +52,6 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-@SuppressWarnings("UnstableApiUsage")
 public final class MinestomActionController extends CommonNpcActionController {
 
   private final NpcTracker<Instance, Player, ItemStack, Object> npcTracker;
@@ -160,7 +159,7 @@ public final class MinestomActionController extends CommonNpcActionController {
 
   private void handlePlayerInstanceSpawn(@NotNull PlayerSpawnEvent event) {
     // ensure that we stop tracking the player on NPCs which are not in the same world as the player
-    String instanceId = event.getSpawnInstance().getUniqueId().toString();
+    String instanceId = event.getInstance().getUniqueId().toString();
     for (Npc<Instance, Player, ItemStack, Object> npc : this.npcTracker.trackedNpcs()) {
       if (!npc.position().worldId().equals(instanceId)) {
         // the player is no longer in the same world, stop tracking

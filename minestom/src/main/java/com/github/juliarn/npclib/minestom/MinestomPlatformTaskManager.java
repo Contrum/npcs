@@ -25,16 +25,17 @@
 package com.github.juliarn.npclib.minestom;
 
 import com.github.juliarn.npclib.api.PlatformTaskManager;
+import com.github.juliarn.npclib.common.task.AsyncPlatformTaskManager;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.timer.ExecutionType;
 import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.NotNull;
 
-public final class MinestomPlatformTaskManager implements PlatformTaskManager {
+public final class MinestomPlatformTaskManager extends AsyncPlatformTaskManager {
 
   private static final MinestomPlatformTaskManager INSTANCE = new MinestomPlatformTaskManager();
 
   private MinestomPlatformTaskManager() {
+    super("Minestom");
   }
 
   public static @NotNull PlatformTaskManager taskManager() {
@@ -49,19 +50,5 @@ public final class MinestomPlatformTaskManager implements PlatformTaskManager {
   @Override
   public void scheduleDelayedSync(@NotNull Runnable task, int delayTicks) {
     MinecraftServer.getSchedulerManager().scheduleTask(task, TaskSchedule.tick(delayTicks), TaskSchedule.stop());
-  }
-
-  @Override
-  public void scheduleAsync(@NotNull Runnable task) {
-    MinecraftServer.getSchedulerManager().scheduleNextTick(task, ExecutionType.ASYNC);
-  }
-
-  @Override
-  public void scheduleDelayedAsync(@NotNull Runnable task, int delayTicks) {
-    MinecraftServer.getSchedulerManager().scheduleTask(
-      task,
-      TaskSchedule.tick(delayTicks),
-      TaskSchedule.stop(),
-      ExecutionType.ASYNC);
   }
 }

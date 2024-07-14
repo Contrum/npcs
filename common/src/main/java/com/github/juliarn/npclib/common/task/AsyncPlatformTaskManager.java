@@ -33,14 +33,14 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
-public final class AsyncPlatformTaskManager implements PlatformTaskManager {
+public class AsyncPlatformTaskManager implements PlatformTaskManager {
 
   private static final long ONE_TICK_MS = 1000 / 20;
 
   private final ExecutorService runOnceExecutorService;
   private final ScheduledExecutorService scheduledExecutorService;
 
-  private AsyncPlatformTaskManager(@NotNull String extensionId) {
+  protected AsyncPlatformTaskManager(@NotNull String extensionId) {
     ThreadFactory runOnceThreadFactory = AsyncTaskThreadFactory.create(extensionId + " NPC-Lib Task #%d");
     this.runOnceExecutorService = Executors.newCachedThreadPool(runOnceThreadFactory);
 
