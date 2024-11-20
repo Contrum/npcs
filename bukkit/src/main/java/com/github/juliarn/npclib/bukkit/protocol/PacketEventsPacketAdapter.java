@@ -108,7 +108,6 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
 
   private static final PacketEventsSettings PACKET_EVENTS_SETTINGS = new PacketEventsSettings()
     .debug(false)
-    .bStats(true)
     .checkForUpdates(false)
     .reEncodeByDefault(false)
     .timeStampMode(TimeStampMode.NONE);

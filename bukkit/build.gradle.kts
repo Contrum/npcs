@@ -45,6 +45,7 @@ dependencies {
 tasks.withType<ShadowJar> {
   dependsOn(":npc-lib-common:shadowJar")
 
+  relocate("net.kyori", "com.github.juliarn.npclib.relocate.net.kyori")
   relocate("io.papermc.lib", "com.github.juliarn.npclib.relocate.paperlib")
   relocate("io.leangen.geantyref", "com.github.juliarn.npclib.relocate.geantyref")
 

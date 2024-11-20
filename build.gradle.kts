@@ -58,7 +58,7 @@ allprojects {
     // packetevents
     maven("https://repo.codemc.io/repository/maven-releases/") {
       mavenContent {
-        includeGroup("com.github.retrooper.packetevents")
+        includeGroup("com.github.retrooper")
       }
     }
   }
@@ -70,7 +70,7 @@ subprojects {
   apply(plugin = "java-library")
   apply(plugin = "maven-publish")
   apply(plugin = "com.diffplug.spotless")
-  apply(plugin = "com.github.johnrengelman.shadow")
+  apply(plugin = "io.github.goooler.shadow")
 
   dependencies {
     "compileOnly"(rootProject.libs.annotations)
@@ -106,7 +106,7 @@ subprojects {
 
   extensions.configure<JavaPluginExtension> {
     disableAutoTargetJvm()
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
   }
 
   extensions.configure<SpotlessExtension> {
