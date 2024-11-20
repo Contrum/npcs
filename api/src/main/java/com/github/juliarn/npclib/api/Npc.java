@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import org.contrum.holograms.api.Hologram;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -96,6 +97,8 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
 
   @NotNull NpcSpecificOutboundPacket<W, P, I, E> changeItem(@NotNull ItemSlot slot, @NotNull I item);
 
+  @NotNull Npc<W, P, I, E> lookAtPlayer(@NotNull P player, @NotNull Position position);
+
   @NotNull Npc<W,P, I, E> addCommand(@NotNull String command);
 
   @NotNull Npc<W,P, I, E> removeCommand(@NotNull String command);
@@ -110,6 +113,20 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
   @NotNull <T, O> NpcSpecificOutboundPacket<W, P, I, E> changeMetadata(
     @NotNull EntityMetadataFactory<T, O> metadata,
     @NotNull T value);
+
+  Hologram hologram();
+
+  Npc<W, P, I, E> hologram(Hologram hologram);
+
+  Consumer<P> onRightClick();
+
+  Consumer<P> onLeftClick();
+
+  Npc<W, P, I, E> onRightClick(Consumer<P> consumer);
+
+  Npc<W, P, I, E> onLeftClick(Consumer<P> consumer);
+
+  boolean isPlayerTracked(P player);
 
   interface Builder<W, P, I, E> extends NpcFlaggedBuilder<Builder<W, P, I, E>> {
 

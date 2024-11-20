@@ -24,9 +24,14 @@
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
+repositories {
+  mavenLocal()
+}
+
 dependencies {
   compileOnly(libs.gson)
   implementation(libs.geantyref)
+  compileOnly("org.contrum.holograms:spigot:1.0.4")
 }
 
 tasks.withType<ShadowJar> {

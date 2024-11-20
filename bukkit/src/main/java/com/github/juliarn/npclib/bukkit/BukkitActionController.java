@@ -49,6 +49,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -87,7 +88,7 @@ public final class BukkitActionController extends CommonNpcActionController impl
           Player player = event.player();
           event.npc().platform().packetFactory()
             .createPlayerInfoPacket(PlayerInfoAction.REMOVE_PLAYER)
-            .schedule(player, event.npc());
+            .toSpecific(event.npc());
         }, tabRemovalTicks);
       });
     }
@@ -107,7 +108,7 @@ public final class BukkitActionController extends CommonNpcActionController impl
 
         double distance = BukkitPlatformUtil.distance(event.npc(), to);
         if (distance <= this.imitateDistance && event.npc().flagValueOrDefault(Npc.LOOK_AT_PLAYER)) {
-          event.npc().lookAt(BukkitPlatformUtil.positionFromBukkitLegacy(to)).schedule(player);
+          event.npc().lookAtPlayer(player, BukkitPlatformUtil.positionFromBukkitLegacy(to));
         }
       });
     }
@@ -127,6 +128,22 @@ public final class BukkitActionController extends CommonNpcActionController impl
     return new BukkitActionControllerBuilder(plugin, eventManager, versionAccessor, npcTracker);
   }
 
+  @EventHandler
+  public void handleJoin(PlayerJoinEvent event) {
+    Player player = event.getPlayer();
+    for (Npc<World, Player, ItemStack, Plugin> npc : this.npcTracker.trackedNpcs()) {
+
+      double distance = BukkitPlatformUtil.distance(npc, player.getLocation());
+      if (distance > this.spawnDistance) {
+        continue;
+      }
+
+      if (npc.world().equals(player.getWorld())) {
+        this.npcTracker.addToQueue(player, npc);
+      }
+    }
+  }
+
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void handleMove(@NotNull PlayerMoveEvent event) {
     Location to = event.getTo();
@@ -136,35 +153,26 @@ public final class BukkitActionController extends CommonNpcActionController impl
     boolean changedOrientation = from.getYaw() != to.getYaw() || from.getPitch() != to.getPitch();
     boolean changedPosition = from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
 
-    // check if any movement happened (event is also called when standing still)
     if (changedPosition || changedOrientation || changedWorld) {
       Player player = event.getPlayer();
       for (Npc<World, Player, ItemStack, Plugin> npc : this.npcTracker.trackedNpcs()) {
-        // check if the player is still in the same world as the npc
         Position pos = npc.position();
         if (!npc.world().equals(player.getWorld()) || !npc.world().isChunkLoaded(pos.chunkX(), pos.chunkZ())) {
-          // if the player is tracked by the npc, stop that
-          npc.stopTrackingPlayer(player);
           continue;
         }
 
-        // check if the player moved in / out of any npc tracking distance
         double distance = BukkitPlatformUtil.distance(npc, to);
         if (distance > this.spawnDistance) {
-          // this will only do something if the player is already tracked by the npc
-          npc.stopTrackingPlayer(player);
           continue;
-        } else {
-          // this will only do something if the player is not already tracked by the npc
-          npc.trackPlayer(player);
+        }
+
+        if (player.hasMetadata("apple:fps:npc")) {
+          return;
         }
 
         // check if we should rotate the npc towards the player
-        if (changedPosition
-          && npc.tracksPlayer(player)
-          && distance <= this.imitateDistance
-          && npc.flagValueOrDefault(Npc.LOOK_AT_PLAYER)) {
-          npc.lookAt(BukkitPlatformUtil.positionFromBukkitLegacy(to)).schedule(player);
+        if (changedPosition && npc.tracksPlayer(player) && distance <= this.imitateDistance && npc.flagValueOrDefault(Npc.LOOK_AT_PLAYER)) {
+          npc.lookAtPlayer(player, BukkitPlatformUtil.positionFromBukkitLegacy(to));
         }
       }
     }

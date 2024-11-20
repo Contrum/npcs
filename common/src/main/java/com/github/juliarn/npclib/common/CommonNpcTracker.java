@@ -26,22 +26,65 @@ package com.github.juliarn.npclib.common;
 
 import com.github.juliarn.npclib.api.Npc;
 import com.github.juliarn.npclib.api.NpcTracker;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
-public class CommonNpcTracker<W, P, I, E> implements NpcTracker<W, P, I, E> {
+public abstract class CommonNpcTracker<W, P, I, E> implements NpcTracker<W, P, I, E> {
+
+  protected final Logger logger = Logger.getLogger("npc-lib");
 
   protected final Set<Npc<W, P, I, E>> trackedNpcs = Collections.synchronizedSet(new HashSet<>());
+  protected final Map<P, Set<Npc<W, P, I, E>>> npcqueue = new ConcurrentHashMap<>();
 
-  public static @NotNull <W, P, I, E> CommonNpcTracker<W, P, I, E> newNpcTracker() {
-    return new CommonNpcTracker<>();
+  protected final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2,
+    r -> {
+      Thread thread = new Thread(r);
+      thread.setName("npc-lib NPC Tracker");
+      thread.setDaemon(true);
+      thread.setUncaughtExceptionHandler((t, e) -> {
+        logger.severe("Uncaught exception in npc-lib NPC Tracker thread");
+        e.printStackTrace();
+      });
+      return thread;
+    }
+  );
+
+  public CommonNpcTracker() {
+    executor.scheduleAtFixedRate(() -> {
+      for (Map.Entry<P, Set<Npc<W, P, I, E>>> entry : this.npcqueue.entrySet()) {
+        P player = entry.getKey();
+        List<Npc<W, P, I, E>> npcs = new ArrayList<>(entry.getValue());
+
+        npcs.sort((npc1, npc2) -> {
+          double distance1 = calculateDistance(player, npc1);
+          double distance2 = calculateDistance(player, npc2);
+          return Double.compare(distance1, distance2);
+        });
+
+        if (npcs.isEmpty()) continue;
+
+        Npc<W, P, I, E> npc = npcs.iterator().next();
+        npc.trackPlayer(player);
+        entry.getValue().remove(npc);
+      }
+    }, 0L, 1L, TimeUnit.SECONDS);
   }
+
+  public abstract double calculateDistance(P player, Npc<W, P, I, E> npc);
 
   @Override
   public @Nullable Npc<W, P, I, E> npcById(int entityId) {
@@ -78,5 +121,18 @@ public class CommonNpcTracker<W, P, I, E> implements NpcTracker<W, P, I, E> {
   @Override
   public @UnmodifiableView @NotNull Collection<Npc<W, P, I, E>> trackedNpcs() {
     return Collections.unmodifiableCollection(this.trackedNpcs);
+  }
+
+  @Override
+  public void addToQueue(@NotNull P player, @NotNull Npc<W, P, I, E> npc) {
+    npcqueue.computeIfAbsent(player, k -> new HashSet<>()).add(npc);
+  }
+
+  @Override
+  public void removeFromQueue(@NotNull P player, @NotNull Npc<W, P, I, E> npc) {
+    Set<Npc<W, P, I, E>> npcs = npcqueue.get(player);
+    if (npcs != null) {
+      npcs.remove(npc);
+    }
   }
 }

@@ -34,7 +34,6 @@ import com.github.juliarn.npclib.api.event.manager.NpcEventManager;
 import com.github.juliarn.npclib.api.log.PlatformLogger;
 import com.github.juliarn.npclib.api.profile.ProfileResolver;
 import com.github.juliarn.npclib.api.protocol.PlatformPacketAdapter;
-import com.github.juliarn.npclib.common.CommonNpcTracker;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
@@ -140,11 +139,6 @@ public abstract class CommonPlatformBuilder<W, P, I, E> implements Platform.Buil
     // use a new event bus if no specific one was specified
     if (this.eventManager == null) {
       this.eventManager = NpcEventManager.createDefault(this.debug, this.logger);
-    }
-
-    // use a new npc tracker if none is given
-    if (this.npcTracker == null) {
-      this.npcTracker = CommonNpcTracker.newNpcTracker();
     }
 
     return doBuild();

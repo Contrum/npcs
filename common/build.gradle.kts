@@ -48,8 +48,13 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
  * THE SOFTWARE.
  */
 
+repositories {
+  mavenLocal()
+}
+
 dependencies {
   api(projects.npcLibApi)
+  compileOnly("org.contrum.holograms:spigot:1.0.4")
 }
 
 tasks.withType<ShadowJar> {

@@ -49,6 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import org.contrum.holograms.api.Hologram;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -68,6 +70,11 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   protected final Map<ItemSlot, I> equipment = Collections.synchronizedMap(new HashMap<>());
 
   protected final List<String> commands = Collections.synchronizedList(new ArrayList<>());
+
+  protected Hologram hologram;
+
+  protected Consumer<P> onRightClick;
+  protected Consumer<P> onLeftClick;
 
   public CommonNpc(
     @NotNull Map<NpcFlag<?>, Optional<?>> flags,
@@ -161,7 +168,12 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   @Override
   public @NotNull Npc<W, P, I, E> removeIncludedPlayer(@NotNull P player) {
     this.includedPlayers.remove(player);
+    System.out.println("removeIncludedPlayer");
     return this;
+  }
+
+  public boolean isPlayerTracked(P player) {
+    return this.trackedPlayers.contains(player);
   }
 
   @Override
@@ -218,9 +230,12 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
 
       // send the player info packet & schedule the actual add of the
       // player entity into the target world
-      this.platform.packetFactory().createPlayerInfoPacket(PlayerInfoAction.ADD_PLAYER).schedule(player, this);
+
+      this.platform.packetFactory().createPlayerInfoPacket(PlayerInfoAction.ADD_PLAYER)
+        .schedule(player, this);
       this.platform.taskManager().scheduleDelayedAsync(() -> {
         this.platform.packetFactory().createEntitySpawnPacket().schedule(player, this);
+
         this.platform.eventManager().post(DefaultShowNpcEvent.post(this, player));
       }, 10);
     }
@@ -232,6 +247,7 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   public @NotNull Npc<W, P, I, E> stopTrackingPlayer(@NotNull P player) {
     // check if the player was previously tracked
     if (this.trackedPlayers.contains(player)) {
+      System.out.println("stopTrackingPlayer");
       // break early if the removal is not wanted by plugin
       if (this.platform.eventManager().post(DefaultHideNpcEvent.pre(this, player)).cancelled()) {
         return this;
@@ -288,6 +304,28 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   }
 
   @Override
+  public @NotNull Npc<W, P, I, E> lookAtPlayer(@NotNull P player, @NotNull Position position) {
+    double diffX = position.x() - this.pos.x();
+    double diffY = position.y() - this.pos.y();
+    double diffZ = position.z() - this.pos.z();
+
+    double distanceXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
+    double distanceY = Math.sqrt(distanceXZ * distanceXZ + diffY * diffY);
+
+    double yaw = Math.toDegrees(Math.acos(diffX / distanceXZ));
+    double pitch = Math.toDegrees(Math.acos(diffY / distanceY)) - 90;
+
+    // correct yaw according to difference
+    if (diffZ < 0) {
+      yaw += Math.abs(180 - yaw) * 2;
+    }
+    yaw -= 90;
+
+    this.platform.packetFactory().createRotationPacket((float) yaw, (float) pitch).schedule(player, this);
+    return this;
+  }
+
+  @Override
   public @NotNull Npc<W, P, I, E> addCommand(@NotNull String command) {
     this.commands.add(command);
     return this;
@@ -316,6 +354,39 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
     @NotNull T value
   ) {
     return this.platform.packetFactory().createEntityMetaPacket(metadata, value).toSpecific(this);
+  }
+
+  @Override
+  public @NotNull Hologram hologram() {
+    return hologram;
+  }
+
+  @Override
+  public @NotNull Npc<W, P, I, E> hologram(@NotNull Hologram hologram) {
+    this.hologram = hologram;
+    return this;
+  }
+
+  @Override
+  public Consumer<P> onRightClick() {
+    return onRightClick;
+  }
+
+  @Override
+  public Consumer<P> onLeftClick() {
+    return onLeftClick;
+  }
+
+  @Override
+  public @NotNull Npc<W, P, I, E> onRightClick(@NotNull Consumer<P> onRightClick) {
+    this.onRightClick = onRightClick;
+    return this;
+  }
+
+  @Override
+  public @NotNull Npc<W, P, I, E> onLeftClick(@NotNull Consumer<P> onLeftClick) {
+    this.onLeftClick = onLeftClick;
+    return this;
   }
 
   @Override

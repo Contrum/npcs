@@ -24,6 +24,10 @@
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
+repositories {
+  mavenLocal()
+}
+
 dependencies {
   api(projects.npcLibApi)
   implementation(projects.npcLibCommon)
@@ -35,6 +39,7 @@ dependencies {
   compileOnly(libs.netty)
   compileOnly(libs.paper)
   compileOnly(libs.protocolLib)
+  compileOnly("org.contrum.holograms:spigot:1.0.4")
 }
 
 tasks.withType<ShadowJar> {

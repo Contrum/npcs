@@ -42,4 +42,8 @@ public interface NpcTracker<W, P, I, E> {
 
   @UnmodifiableView
   @NotNull Collection<Npc<W, P, I, E>> trackedNpcs();
+
+  void addToQueue(@NotNull P player, @NotNull Npc<W, P, I, E> npc);
+
+  void removeFromQueue(@NotNull P player, @NotNull Npc<W, P, I, E> npc);
 }

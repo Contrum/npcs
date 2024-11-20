@@ -78,8 +78,8 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPl
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPluginMessage;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnPlayer;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTeams;
 import com.google.common.collect.ImmutableMap;
-import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import io.github.retrooper.packetevents.util.SpigotReflectionUtil;
 import io.leangen.geantyref.TypeFactory;
 import java.lang.reflect.Type;
@@ -94,10 +94,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Player, ItemStack, Plugin> {
@@ -152,7 +154,6 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
   public @NotNull OutboundPacket<World, Player, ItemStack, Plugin> createEntitySpawnPacket() {
     return (player, npc) -> {
       Location location = npcLocation(npc);
-
       PacketWrapper<?> wrapper;
       if (this.serverVersion.isNewerThanOrEquals(ServerVersion.V_1_20_2)) {
         // SpawnEntity (https://wiki.vg/Protocol#Spawn_Entity)
@@ -170,10 +171,64 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
         // SpawnPlayer (https://wiki.vg/Protocol#Spawn_Player)
         wrapper = new WrapperPlayServerSpawnPlayer(npc.entityId(), npc.profile().uniqueId(), location);
       }
-
       // send the packet without notifying any listeners
       this.packetPlayerManager.sendPacketSilently(player, wrapper);
+
+      if (npc.hologram() != null) {
+        npc.hologram().spawn(player);
+        //Hide nameplate of npc
+
+        hideNamePlate(npc, player);
+      }
+
+      for (ItemSlot itemSlot : ItemSlot.values()) {
+        if (npc.equipment(itemSlot) != null) {
+          this.createEquipmentPacket(itemSlot, npc.equipment(itemSlot)).toSpecific(npc);
+        }
+      }
     };
+  }
+
+  public void hideNamePlate(Npc<?, ?, ?, ?> npc, Player player) {
+    String name = npc.profile().name();
+
+    if (name.length() > 16) {
+      name = name.substring(0, 16);
+    }
+
+    WrapperPlayServerTeams.ScoreBoardTeamInfo teamInfo = new WrapperPlayServerTeams.ScoreBoardTeamInfo(
+      net.kyori.adventure.text.Component.text(npc.profile().name()),
+      null,
+      null,
+      WrapperPlayServerTeams.NameTagVisibility.NEVER,
+      WrapperPlayServerTeams.CollisionRule.NEVER,
+      NamedTextColor.WHITE,
+      WrapperPlayServerTeams.OptionData.ALL);
+
+    WrapperPlayServerTeams removeTeamPacket = new WrapperPlayServerTeams(
+      name,
+      WrapperPlayServerTeams.TeamMode.REMOVE,
+      teamInfo,
+      name
+    );
+
+    WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(
+      name,
+      WrapperPlayServerTeams.TeamMode.CREATE,
+      teamInfo,
+      name
+    );
+
+    WrapperPlayServerTeams updateTeamPacket = new WrapperPlayServerTeams(
+      name,
+      WrapperPlayServerTeams.TeamMode.UPDATE,
+      teamInfo,
+      name
+    );
+
+    this.packetPlayerManager.sendPacket(player, removeTeamPacket);
+    this.packetPlayerManager.sendPacket(player, teamPacket);
+    this.packetPlayerManager.sendPacket(player, updateTeamPacket);
   }
 
   @Override
@@ -182,8 +237,14 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
       // DestroyEntities (https://wiki.vg/Protocol#Destroy_Entities)
       PacketWrapper<?> wrapper = new WrapperPlayServerDestroyEntities(npc.entityId());
       this.packetPlayerManager.sendPacketSilently(player, wrapper);
+
+      if (npc.hologram() != null) {
+        npc.hologram().destroy(player);
+      }
     };
   }
+
+
 
   @Override
   public @NotNull OutboundPacket<World, Player, ItemStack, Plugin> createPlayerInfoPacket(
@@ -358,11 +419,7 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
   @Override
   public void initialize(@NotNull Platform<World, Player, ItemStack, Plugin> platform) {
     // build the packet events api
-    PacketEventsAPI<Plugin> packetEventsApi = SpigotPacketEventsBuilder.buildNoCache(
-      platform.extension(),
-      PACKET_EVENTS_SETTINGS);
-
-    packetEventsApi = (PacketEventsAPI<Plugin>) PacketEvents.getAPI();
+    PacketEventsAPI<Plugin> packetEventsApi = (PacketEventsAPI<Plugin>) PacketEvents.getAPI();
 
     // store the packet player manager & server version
     this.packetPlayerManager = packetEventsApi.getPlayerManager();
@@ -400,11 +457,16 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
               InteractNpcEvent.Hand hand = Lazy.HAND_CONVERTER.get(packet.getHand());
               this.platform.eventManager().post(DefaultInteractNpcEvent.interactNpc(npc, player, hand));
               if (!npc.getCommands().isEmpty()) {
-                for (String command : npc.getCommands()) {
-                  Player other = (Player) player;
+                new BukkitRunnable() {
+                  @Override
+                  public void run() {
+                    for (String command : npc.getCommands()) {
+                      Player other = (Player) player;
 
-                  other.performCommand(command);
-                }
+                      other.performCommand(command);
+                    }
+                  }
+                }.runTask(platform.extension());
               }
               break;
             default:
