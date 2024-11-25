@@ -168,7 +168,6 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   @Override
   public @NotNull Npc<W, P, I, E> removeIncludedPlayer(@NotNull P player) {
     this.includedPlayers.remove(player);
-    System.out.println("removeIncludedPlayer");
     return this;
   }
 
@@ -247,7 +246,6 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   public @NotNull Npc<W, P, I, E> stopTrackingPlayer(@NotNull P player) {
     // check if the player was previously tracked
     if (this.trackedPlayers.contains(player)) {
-      System.out.println("stopTrackingPlayer");
       // break early if the removal is not wanted by plugin
       if (this.platform.eventManager().post(DefaultHideNpcEvent.pre(this, player)).cancelled()) {
         return this;
