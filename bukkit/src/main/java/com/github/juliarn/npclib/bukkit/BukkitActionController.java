@@ -222,6 +222,7 @@ public final class BukkitActionController extends CommonNpcActionController impl
       // check if the npc tracks the player which disconnected and stop tracking him if so
       npc.stopTrackingPlayer(event.getPlayer());
     }
+    npcTracker.removePlayerFromCache(event.getPlayer());
   }
 
   private static final class BukkitActionControllerBuilder

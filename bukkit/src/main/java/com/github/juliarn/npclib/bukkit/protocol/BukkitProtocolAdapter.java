@@ -37,15 +37,15 @@ public final class BukkitProtocolAdapter {
     throw new UnsupportedOperationException();
   }
 
-  public static @NotNull PlatformPacketAdapter<World, Player, ItemStack, Plugin> packetAdapter() {
-    return PacketEventsPacketAdapter.INSTANCE;
+  public static @NotNull PlatformPacketAdapter<World, Player, ItemStack, Plugin> packetAdapter(Plugin plugin) {
+    return new PacketEventsPacketAdapter();
   }
 
   public static @NotNull PlatformPacketAdapter<World, Player, ItemStack, Plugin> protocolLib() {
     return ProtocolLibPacketAdapter.INSTANCE;
   }
 
-  public static @NotNull PlatformPacketAdapter<World, Player, ItemStack, Plugin> packetEvents() {
-    return PacketEventsPacketAdapter.INSTANCE;
+  public static @NotNull PlatformPacketAdapter<World, Player, ItemStack, Plugin> packetEvents(Plugin plugin) {
+    return new PacketEventsPacketAdapter();
   }
 }

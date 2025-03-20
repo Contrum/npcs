@@ -76,7 +76,7 @@ public final class BukkitPlatform extends CommonPlatformBuilder<World, Player, I
 
     // set the default packet adapter
     if (this.packetAdapter == null) {
-      this.packetAdapter = BukkitProtocolAdapter.packetAdapter();
+      this.packetAdapter = BukkitProtocolAdapter.packetAdapter(this.extension);
     }
 
     // set the default logger if no logger was provided
