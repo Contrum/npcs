@@ -366,13 +366,17 @@ public class CommonNpc<W, P, I, E> extends CommonNpcFlaggedObject implements Npc
   }
 
   @Override
-  public Consumer<P> onRightClick() {
-    return onRightClick;
+  public void rightClick(P player) {
+    if (onRightClick != null) {
+      onRightClick.accept(player);
+    }
   }
 
   @Override
-  public Consumer<P> onLeftClick() {
-    return onLeftClick;
+  public void leftClick(P player) {
+    if (onLeftClick != null) {
+      onLeftClick.accept(player);
+    }
   }
 
   @Override

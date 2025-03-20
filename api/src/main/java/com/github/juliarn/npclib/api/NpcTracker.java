@@ -46,4 +46,6 @@ public interface NpcTracker<W, P, I, E> {
   void addToQueue(@NotNull P player, @NotNull Npc<W, P, I, E> npc);
 
   void removeFromQueue(@NotNull P player, @NotNull Npc<W, P, I, E> npc);
+
+  void removePlayerFromCache(@NotNull P player);
 }

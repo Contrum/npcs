@@ -152,10 +152,11 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
   @Override
   public @NotNull OutboundPacket<World, Player, ItemStack, Plugin> createEntitySpawnPacket() {
     return (player, npc) -> {
+      registerNpcInHiddenTeam(player, npc);
+
       Location location = npcLocation(npc);
       PacketWrapper<?> wrapper;
       if (this.serverVersion.isNewerThanOrEquals(ServerVersion.V_1_20_2)) {
-        // SpawnEntity (https://wiki.vg/Protocol#Spawn_Entity)
         wrapper = new WrapperPlayServerSpawnEntity(
           npc.entityId(),
           Optional.of(npc.profile().uniqueId()),
@@ -167,18 +168,14 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
           0,
           Optional.empty());
       } else {
-        // SpawnPlayer (https://wiki.vg/Protocol#Spawn_Player)
         wrapper = new WrapperPlayServerSpawnPlayer(npc.entityId(), npc.profile().uniqueId(), location);
       }
-      // send the packet without notifying any listeners
+
       this.packetPlayerManager.sendPacketSilently(player, wrapper);
 
-      if (npc.hologram() != null) {
+      /* if (npc.hologram() != null) {
         npc.hologram().spawn(player);
-        //Hide nameplate of npc
-
-        hideNamePlate(npc, player);
-      }
+      } */
 
       for (ItemSlot itemSlot : ItemSlot.values()) {
         if (npc.equipment(itemSlot) != null) {
@@ -186,48 +183,6 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
         }
       }
     };
-  }
-
-  public void hideNamePlate(Npc<?, ?, ?, ?> npc, Player player) {
-    String name = npc.profile().name();
-
-    if (name.length() > 16) {
-      name = name.substring(0, 16);
-    }
-
-    WrapperPlayServerTeams.ScoreBoardTeamInfo teamInfo = new WrapperPlayServerTeams.ScoreBoardTeamInfo(
-      net.kyori.adventure.text.Component.text(npc.profile().name()),
-      null,
-      null,
-      WrapperPlayServerTeams.NameTagVisibility.NEVER,
-      WrapperPlayServerTeams.CollisionRule.NEVER,
-      NamedTextColor.WHITE,
-      WrapperPlayServerTeams.OptionData.ALL);
-
-    WrapperPlayServerTeams removeTeamPacket = new WrapperPlayServerTeams(
-      name,
-      WrapperPlayServerTeams.TeamMode.REMOVE,
-      teamInfo,
-      name
-    );
-
-    WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(
-      name,
-      WrapperPlayServerTeams.TeamMode.CREATE,
-      teamInfo,
-      name
-    );
-
-    WrapperPlayServerTeams updateTeamPacket = new WrapperPlayServerTeams(
-      name,
-      WrapperPlayServerTeams.TeamMode.UPDATE,
-      teamInfo,
-      name
-    );
-
-    this.packetPlayerManager.sendPacket(player, removeTeamPacket);
-    this.packetPlayerManager.sendPacket(player, teamPacket);
-    this.packetPlayerManager.sendPacket(player, updateTeamPacket);
   }
 
   @Override
@@ -245,56 +200,116 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
 
 
 
+  private void registerNpcInHiddenTeam(Player player, Npc<?, ?, ?, ?> npc) {
+    String teamName = "npcHidden_" + npc.entityId();
+    if (teamName.length() > 16) {
+      teamName = teamName.substring(0, 16);
+    }
+    String name = npc.profile().name();
+
+    if (name.length() > 16) {
+      name = name.substring(0, 16);
+    }
+
+    WrapperPlayServerTeams.ScoreBoardTeamInfo teamInfo = new WrapperPlayServerTeams.ScoreBoardTeamInfo(
+      net.kyori.adventure.text.Component.text("Hidden NPC"),
+      null,
+      null,
+      WrapperPlayServerTeams.NameTagVisibility.NEVER,
+      WrapperPlayServerTeams.CollisionRule.NEVER,
+      NamedTextColor.WHITE,
+      WrapperPlayServerTeams.OptionData.NONE
+    );
+
+    WrapperPlayServerTeams createTeamPacket = new WrapperPlayServerTeams(
+      teamName,
+      WrapperPlayServerTeams.TeamMode.CREATE,
+      teamInfo,
+      Collections.emptyList()
+    );
+
+    WrapperPlayServerTeams addEntryPacket = new WrapperPlayServerTeams(
+      teamName,
+      WrapperPlayServerTeams.TeamMode.ADD_ENTITIES,
+      (WrapperPlayServerTeams.ScoreBoardTeamInfo) null,
+      name
+    );
+
+    this.packetPlayerManager.sendPacketSilently(player, createTeamPacket);
+    this.packetPlayerManager.sendPacketSilently(player, addEntryPacket);
+  }
+
   @Override
   public @NotNull OutboundPacket<World, Player, ItemStack, Plugin> createPlayerInfoPacket(
     @NotNull PlayerInfoAction action
   ) {
-    return (player, npc) -> npc.settings().profileResolver().resolveNpcProfile(player, npc).thenAcceptAsync(profile -> {
-      // convert the profile to a UserProfile
-      UserProfile userProfile = new UserProfile(profile.uniqueId(), profile.name());
-      for (ProfileProperty property : profile.properties()) {
-        TextureProperty textureProperty = new TextureProperty(property.name(), property.value(), property.signature());
-        userProfile.getTextureProperties().add(textureProperty);
+    return (player, npc) -> {
+      if (action == PlayerInfoAction.ADD_PLAYER) {
+        registerNpcInHiddenTeam(player, npc);
+
+        npc.settings().profileResolver().resolveNpcProfile(player, npc).thenAcceptAsync(profile -> {
+          UserProfile userProfile = new UserProfile(profile.uniqueId(), profile.name());
+          for (ProfileProperty property : profile.properties()) {
+            TextureProperty textureProperty = new TextureProperty(property.name(), property.value(), property.signature());
+            userProfile.getTextureProperties().add(textureProperty);
+          }
+
+          if (this.serverVersion.isNewerThanOrEquals(ServerVersion.V_1_19_3)) {
+            EnumSet<WrapperPlayServerPlayerInfoUpdate.Action> limitedActions = EnumSet.of(
+              WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER
+            );
+
+            WrapperPlayServerPlayerInfoUpdate.PlayerInfo playerInfo = new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
+              userProfile,
+              false,
+              0,
+              GameMode.CREATIVE,
+              null,
+              null,
+              0,
+              true
+            );
+
+            PacketWrapper<?> wrapper = new WrapperPlayServerPlayerInfoUpdate(
+              limitedActions,
+              Collections.singletonList(playerInfo)
+            );
+            this.packetPlayerManager.sendPacketSilently(player, wrapper);
+          } else {
+            WrapperPlayServerPlayerInfo.PlayerData playerData = new WrapperPlayServerPlayerInfo.PlayerData(
+              null,
+              userProfile,
+              GameMode.CREATIVE,
+              0
+            );
+
+            WrapperPlayServerPlayerInfo.Action playerInfoAction = Lazy.PLAYER_INFO_ACTION_CONVERTER.get(action);
+            PacketWrapper<?> wrapper = new WrapperPlayServerPlayerInfo(playerInfoAction, playerData);
+            this.packetPlayerManager.sendPacketSilently(player, wrapper);
+          }
+        });
+      } else if (action == PlayerInfoAction.REMOVE_PLAYER) {
+        npc.settings().profileResolver().resolveNpcProfile(player, npc).thenAcceptAsync(profile -> {
+          if (this.serverVersion.isNewerThanOrEquals(ServerVersion.V_1_19_3)) {
+            List<UUID> uuidsToRemove = Collections.singletonList(profile.uniqueId());
+            PacketWrapper<?> wrapper = new WrapperPlayServerPlayerInfoRemove(uuidsToRemove);
+            this.packetPlayerManager.sendPacketSilently(player, wrapper);
+          } else {
+            UserProfile userProfile = new UserProfile(profile.uniqueId(), profile.name());
+            WrapperPlayServerPlayerInfo.PlayerData playerData = new WrapperPlayServerPlayerInfo.PlayerData(
+              null,
+              userProfile,
+              GameMode.CREATIVE,
+              0
+            );
+
+            WrapperPlayServerPlayerInfo.Action playerInfoAction = Lazy.PLAYER_INFO_ACTION_CONVERTER.get(action);
+            PacketWrapper<?> wrapper = new WrapperPlayServerPlayerInfo(playerInfoAction, playerData);
+            this.packetPlayerManager.sendPacketSilently(player, wrapper);
+          }
+        });
       }
-
-      // the wrapper we want to send
-      PacketWrapper<?> wrapper;
-
-      // check if we need to apply the old handling or new handling
-      if (this.serverVersion.isNewerThanOrEquals(ServerVersion.V_1_19_3)) {
-        if (action == PlayerInfoAction.REMOVE_PLAYER) {
-          // PlayerRemove (https://wiki.vg/Protocol#Player_Remove)
-          List<UUID> uuidsToRemove = Collections.singletonList(profile.uniqueId());
-          wrapper = new WrapperPlayServerPlayerInfoRemove(uuidsToRemove);
-        } else {
-          // create the player
-          WrapperPlayServerPlayerInfoUpdate.PlayerInfo playerInfo = new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
-            userProfile,
-            false,
-            20,
-            GameMode.CREATIVE,
-            null,
-            null);
-
-          // PlayerInfo (https://wiki.vg/Protocol#Player_Info)
-          wrapper = new WrapperPlayServerPlayerInfoUpdate(Lazy.ADD_ACTIONS, Collections.singletonList(playerInfo));
-        }
-      } else {
-        // create the player profile data
-        WrapperPlayServerPlayerInfo.PlayerData playerData = new WrapperPlayServerPlayerInfo.PlayerData(
-          null,
-          userProfile,
-          GameMode.CREATIVE,
-          20);
-
-        // PlayerInfo (https://wiki.vg/Protocol#Player_Info)
-        WrapperPlayServerPlayerInfo.Action playerInfoAction = Lazy.PLAYER_INFO_ACTION_CONVERTER.get(action);
-        wrapper = new WrapperPlayServerPlayerInfo(playerInfoAction, playerData);
-      }
-
-      // send the packet without notifying any listeners
-      this.packetPlayerManager.sendPacketSilently(player, wrapper);
-    });
+    };
   }
 
   @Override
@@ -333,6 +348,7 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
       this.packetPlayerManager.sendPacketSilently(player, wrapper);
     };
   }
+
 
   @Override
   public @NotNull OutboundPacket<World, Player, ItemStack, Plugin> createEquipmentPacket(
@@ -450,9 +466,11 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
           // call the event
           switch (packet.getAction()) {
             case ATTACK:
+              npc.leftClick((Player) player);
               this.platform.eventManager().post(DefaultAttackNpcEvent.attackNpc(npc, player));
               break;
             case INTERACT:
+              npc.rightClick((Player) player);
               InteractNpcEvent.Hand hand = Lazy.HAND_CONVERTER.get(packet.getHand());
               this.platform.eventManager().post(DefaultInteractNpcEvent.interactNpc(npc, player, hand));
               if (!npc.getCommands().isEmpty()) {
@@ -498,6 +516,7 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
       WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LISTED,
       WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LATENCY,
       WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_GAME_MODE,
+      WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_HAT,
       WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_DISPLAY_NAME);
 
     static {

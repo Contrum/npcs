@@ -26,18 +26,15 @@ package com.github.juliarn.npclib.common;
 
 import com.github.juliarn.npclib.api.Npc;
 import com.github.juliarn.npclib.api.NpcTracker;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,24 +61,6 @@ public abstract class CommonNpcTracker<W, P, I, E> implements NpcTracker<W, P, I
   );
 
   public CommonNpcTracker() {
-    executor.scheduleAtFixedRate(() -> {
-      for (Map.Entry<P, Set<Npc<W, P, I, E>>> entry : this.npcqueue.entrySet()) {
-        P player = entry.getKey();
-        List<Npc<W, P, I, E>> npcs = new ArrayList<>(entry.getValue());
-
-        npcs.sort((npc1, npc2) -> {
-          double distance1 = calculateDistance(player, npc1);
-          double distance2 = calculateDistance(player, npc2);
-          return Double.compare(distance1, distance2);
-        });
-
-        if (npcs.isEmpty()) continue;
-
-        Npc<W, P, I, E> npc = npcs.iterator().next();
-        npc.trackPlayer(player);
-        entry.getValue().remove(npc);
-      }
-    }, 0L, 1L, TimeUnit.SECONDS);
   }
 
   public abstract double calculateDistance(P player, Npc<W, P, I, E> npc);

@@ -89,7 +89,7 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
 
   @NotNull Npc<W, P, I, E> forceTrackPlayer(@NotNull P player);
 
-  @NotNull Npc<W, P, I, E> stopTrackingPlayer(@NotNull P player);
+  Npc<W, P, I, E> stopTrackingPlayer(@NotNull P player);
 
   @NotNull NpcSpecificOutboundPacket<W, P, I, E> lookAt(@NotNull Position position);
 
@@ -118,9 +118,9 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
 
   Npc<W, P, I, E> hologram(Hologram hologram);
 
-  Consumer<P> onRightClick();
+  void rightClick(P player);
 
-  Consumer<P> onLeftClick();
+  void leftClick(P player);
 
   Npc<W, P, I, E> onRightClick(Consumer<P> consumer);
 

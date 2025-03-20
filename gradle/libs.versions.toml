@@ -19,7 +19,7 @@ paper = "1.21-R0.1-SNAPSHOT"
 
 # platform extensions
 paperLib = "1.0.8"
-packetEvents = "2.4.0"
+packetEvents = "2.7.0"
 protocolLib = "4aa344bab2"
 
 
