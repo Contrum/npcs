@@ -74,6 +74,8 @@ subprojects {
 
   dependencies {
     "compileOnly"(rootProject.libs.annotations)
+    "compileOnly"("org.projectlombok:lombok:1.18.38")
+    "annotationProcessor"("org.projectlombok:lombok:1.18.38")
   }
 
   configurations.all {

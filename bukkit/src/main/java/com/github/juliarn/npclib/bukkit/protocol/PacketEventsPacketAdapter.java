@@ -39,6 +39,7 @@ import com.github.juliarn.npclib.api.protocol.enums.ItemSlot;
 import com.github.juliarn.npclib.api.protocol.enums.PlayerInfoAction;
 import com.github.juliarn.npclib.api.protocol.meta.EntityMetadata;
 import com.github.juliarn.npclib.api.protocol.meta.EntityMetadataFactory;
+import com.github.juliarn.npclib.bukkit.util.Textures;
 import com.github.juliarn.npclib.common.event.DefaultAttackNpcEvent;
 import com.github.juliarn.npclib.common.event.DefaultInteractNpcEvent;
 import com.github.retrooper.packetevents.PacketEvents;
@@ -100,6 +101,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.contrum.holograms.api.Hologram;
 import org.jetbrains.annotations.NotNull;
 
 final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Player, ItemStack, Plugin> {
@@ -178,7 +180,7 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
       } */
 
       for (ItemSlot itemSlot : ItemSlot.values()) {
-        if (npc.equipment(itemSlot) != null) {
+        if (npc.equipment(itemSlot) != null && !npc.flagValueOrDefault(Npc.HIDE_SKIN_AND_HOLOGRAM)) {
           this.createEquipmentPacket(itemSlot, npc.equipment(itemSlot)).toSpecific(npc);
         }
       }
@@ -248,10 +250,24 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
         registerNpcInHiddenTeam(player, npc);
 
         npc.settings().profileResolver().resolveNpcProfile(player, npc).thenAcceptAsync(profile -> {
+          boolean isUpcoming = npc.flagValueOrDefault(Npc.HIDE_SKIN_AND_HOLOGRAM);
           UserProfile userProfile = new UserProfile(profile.uniqueId(), profile.name());
-          for (ProfileProperty property : profile.properties()) {
-            TextureProperty textureProperty = new TextureProperty(property.name(), property.value(), property.signature());
-            userProfile.getTextureProperties().add(textureProperty);
+          if (isUpcoming) {
+            userProfile.getTextureProperties().add(Textures.UNKNOWN_BLACK_SKIN.asTextureProperty());
+
+            Hologram hologram = npc.hologram();
+            if (hologram != null) {
+              if (!hologram.isComingSoon()) {
+                hologram.setComingSoon(true);
+              }
+
+              hologram.spawn(player);
+            }
+          } else {
+            for (ProfileProperty property : profile.properties()) {
+              TextureProperty textureProperty = new TextureProperty(property.name(), property.value(), property.signature());
+              userProfile.getTextureProperties().add(textureProperty);
+            }
           }
 
           if (this.serverVersion.isNewerThanOrEquals(ServerVersion.V_1_19_3)) {
@@ -473,7 +489,7 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
               npc.rightClick((Player) player);
               InteractNpcEvent.Hand hand = Lazy.HAND_CONVERTER.get(packet.getHand());
               this.platform.eventManager().post(DefaultInteractNpcEvent.interactNpc(npc, player, hand));
-              if (!npc.getCommands().isEmpty()) {
+              if (!npc.getCommands().isEmpty() && !npc.flagValueOrDefault(Npc.HIDE_SKIN_AND_HOLOGRAM)) {
                 new BukkitRunnable() {
                   @Override
                   public void run() {

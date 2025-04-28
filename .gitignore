@@ -54,3 +54,6 @@ atlassian-ide-plugin.xml
 
 # delombok
 */src/main/lombok
+
+# vscode
+.vscode/

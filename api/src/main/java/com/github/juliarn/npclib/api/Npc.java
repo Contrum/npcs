@@ -48,6 +48,7 @@ public interface Npc<W, P, I, E> extends NpcFlaggedObject {
   NpcFlag<Boolean> LOOK_AT_PLAYER = NpcFlag.flag("imitate_player_look", false);
   NpcFlag<Boolean> HIT_WHEN_PLAYER_HITS = NpcFlag.flag("imitate_player_hit", false);
   NpcFlag<Boolean> SNEAK_WHEN_PLAYER_SNEAKS = NpcFlag.flag("imitate_player_sneak", false);
+  NpcFlag<Boolean> HIDE_SKIN_AND_HOLOGRAM = NpcFlag.flag("hide_skin_and_hologram", false);
 
   int entityId();
 
