@@ -24,13 +24,15 @@
 
 package com.github.juliarn.npclib.ext.labymod;
 
+import java.nio.ByteBuffer;
+import java.util.UUID;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.github.juliarn.npclib.api.protocol.OutboundPacket;
 import com.github.juliarn.npclib.api.protocol.PlatformPacketAdapter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.nio.ByteBuffer;
-import java.util.UUID;
-import org.jetbrains.annotations.NotNull;
 
 public final class LabyModExtension {
 

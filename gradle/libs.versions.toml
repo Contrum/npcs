@@ -15,11 +15,11 @@ netty = "4.1.111.Final"
 # platform api versions
 sponge = "10.0.0"
 minestom = "79716ab749"
-paper = "1.21-R0.1-SNAPSHOT"
+paper = "1.21.4-R0.1-SNAPSHOT"
 
 # platform extensions
 paperLib = "1.0.8"
-packetEvents = "2.7.0"
+packetEvents = "2.8.0"
 protocolLib = "4aa344bab2"
 
 

@@ -426,7 +426,7 @@ final class PacketEventsPacketAdapter implements PlatformPacketAdapter<World, Pl
       }
 
       // construct the meta we want to send out
-      List<EntityData> entityData = new ArrayList<>();
+      List<EntityData<?>> entityData = new ArrayList<>();
       entityData.add(createEntityData(
         entityMetadata.index(),
         entityMetadata.type(),

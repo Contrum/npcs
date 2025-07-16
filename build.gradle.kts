@@ -99,7 +99,7 @@ subprojects {
 
   tasks.withType<JavaCompile>().configureEach {
     // options
-    options.release.set(8)
+    options.release.set(21)
     options.encoding = "UTF-8"
     options.isIncremental = true
     // we are aware that those are there, but we only do that if there is no other way we can use - so please keep the terminal clean!

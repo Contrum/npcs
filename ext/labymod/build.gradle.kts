@@ -25,5 +25,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 dependencies {
+  api(projects.npcLibApi)
   compileOnly(libs.gson)
 }
