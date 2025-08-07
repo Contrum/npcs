@@ -27,7 +27,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   alias(libs.plugins.spotless)
-  alias(libs.plugins.nexusPublish)
   alias(libs.plugins.shadow) apply false
 }
 
@@ -66,7 +65,6 @@ allprojects {
 
 subprojects {
   // apply all plugins only to subprojects
-  apply(plugin = "signing")
   apply(plugin = "java-library")
   apply(plugin = "maven-publish")
   apply(plugin = "com.diffplug.spotless")
@@ -138,90 +136,23 @@ subprojects {
   }
 
   extensions.configure<PublishingExtension> {
-    publications.apply {
-      create("maven", MavenPublication::class.java).apply {
-        // main output to publish
-        from(components.getByName("java"))
+    publications {
+      create<MavenPublication>("mavenJava") {
+        from(components["java"])
+      }
+    }
+    repositories {
+      // Publish to local maven repository for IntelliJ recognition
+      mavenLocal()
 
-        // additional artifacts
-        artifact(tasks.getByName("sourcesJar"))
-        artifact(tasks.getByName("javadocJar"))
-
-        pom {
-          name.set(project.name)
-          description.set(project.description)
-          url.set("https://github.com/juliarn/NPC-Lib")
-
-          licenses {
-            license {
-              name.set("MIT")
-              url.set("https://opensource.org/licenses/MIT")
-            }
-          }
-
-          scm {
-            tag.set("HEAD")
-            url.set("git@github.com:juliarn/NPC-Lib.git")
-            connection.set("scm:git:git@github.com:juliarn/NPC-Lib.git")
-            developerConnection.set("scm:git:git@github.com:juliarn/NPC-Lib.git")
-          }
-
-          issueManagement {
-            system.set("GitHub Issues")
-            url.set("https://github.com/juliarn/NPC-Lib/issues")
-          }
-
-          ciManagement {
-            system.set("GitHub Actions")
-            url.set("https://github.com/juliarn/NPC-Lib/actions")
-          }
-
-          developers {
-            developer {
-              id.set("derklaro")
-              email.set("git@derklaro.dev")
-              timezone.set("Europe/Berlin")
-              name.set("Pasqual Koschmieder")
-            }
-          }
-
-          withXml {
-            val repositories = asNode().appendNode("repositories")
-            project.repositories.forEach {
-              if (it is MavenArtifactRepository && it.url.toString().startsWith("https://")) {
-                val repo = repositories.appendNode("repository")
-                repo.appendNode("id", it.name)
-                repo.appendNode("url", it.url.toString())
-              }
-            }
-          }
+      maven {
+        name = "contrum-repo"
+        url = uri("https://repo.contrum.org/private/")
+        credentials {
+          username = project.findProperty("contrumLibrariesUsername") as String? ?: ""
+          password = project.findProperty("contrumLibrariesPassword") as String? ?: ""
         }
       }
     }
   }
-
-  tasks.withType<Sign> {
-    onlyIf {
-      !rootProject.version.toString().endsWith("-SNAPSHOT")
-    }
-  }
-
-  extensions.configure<SigningExtension> {
-    useGpgCmd()
-    sign(extensions.getByType(PublishingExtension::class.java).publications.getByName("maven"))
-  }
-}
-
-nexusPublishing {
-  repositories.run {
-    sonatype {
-      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-
-      username.set(project.findProperty("ossrhUsername") as? String ?: "")
-      password.set(project.findProperty("ossrhPassword") as? String ?: "")
-    }
-  }
-
-  useStaging.set(!project.version.toString().endsWith("-SNAPSHOT"))
 }
