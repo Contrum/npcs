@@ -41,6 +41,7 @@ import com.github.juliarn.npclib.common.flag.CommonNpcFlaggedBuilder;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -59,6 +60,7 @@ import org.jetbrains.annotations.NotNull;
 
 public final class BukkitActionController extends CommonNpcActionController implements Listener {
 
+  private final Plugin plugin;
   private final NpcTracker<World, Player, ItemStack, Plugin> npcTracker;
 
   // based on the given flags
@@ -73,6 +75,7 @@ public final class BukkitActionController extends CommonNpcActionController impl
     @NotNull NpcTracker<World, Player, ItemStack, Plugin> tracker
   ) {
     super(flags);
+    this.plugin = plugin;
     this.npcTracker = tracker;
 
     // add all listeners
@@ -131,17 +134,29 @@ public final class BukkitActionController extends CommonNpcActionController impl
   @EventHandler
   public void handleJoin(PlayerJoinEvent event) {
     Player player = event.getPlayer();
-    for (Npc<World, Player, ItemStack, Plugin> npc : this.npcTracker.trackedNpcs()) {
+    
+    // Schedule a delayed check to ensure player is fully loaded
+    Bukkit.getScheduler().runTaskLater(this.plugin, () -> {
+      for (Npc<World, Player, ItemStack, Plugin> npc : this.npcTracker.trackedNpcs()) {
+        try {
+          if (!npc.world().equals(player.getWorld())) {
+            continue;
+          }
 
-      double distance = BukkitPlatformUtil.distance(npc, player.getLocation());
-      if (distance > this.spawnDistance) {
-        continue;
+          double distance = BukkitPlatformUtil.distance(npc, player.getLocation());
+          if (distance <= this.spawnDistance) {
+            // Immediately track close NPCs, queue distant ones
+            if (distance <= (this.spawnDistance * 0.25)) {
+              npc.trackPlayer(player);
+            } else {
+              this.npcTracker.addToQueue(player, npc);
+            }
+          }
+        } catch (Exception e) {
+          // Log but continue processing other NPCs
+        }
       }
-
-      if (npc.world().equals(player.getWorld())) {
-        this.npcTracker.addToQueue(player, npc);
-      }
-    }
+    }, 10L); // 0.5 second delay
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
